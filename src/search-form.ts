@@ -1,11 +1,10 @@
 import { renderBlock } from './lib.js'
 import Dates from './dates.js'
 import SearchFormData from './SearchFormData.interface.js'
-import Place from './Place.interface.js'
-import { fetchData, getTimestamp, normalizeDataSDK } from './utility.js'
 import { renderSearchResultsBlock, getItemsResultSearch } from './search-results.js'
-import {FlatRentSdk, addDays, cloneDate} from './flat-rent-sdk.js'
-// import { cloneDate, addDays } from './flat-rent-sdk.d.js'
+import { HomyApi } from './DataHotel/HomyApi.js'
+import { SdkApi } from './DataHotel/SdkApi.js'
+import Hotels from './DataHotel/Hotels.js'
 
 export function renderSearchFormBlock (dateToday:string, lastDayNextMoth:string) :void {
 
@@ -72,48 +71,22 @@ export function processingSearchForm(e): void {
 
 export async function search(dataSearch: SearchFormData, callBack): void {
 
-  const sdk = new FlatRentSdk()
-  const today = new Date()
 
-  let fetchResult = null,
-      url = `http://localhost:3030/places?` +
-            `checkInDate=${getTimestamp(dataSearch.checkin)}&` +
-            `checkOutDate=${getTimestamp(dataSearch.checkout)}&` +
-            `coordinates=${dataSearch.coordinates}`,
-      error = null,
-      resultSearch = null,
-      sdkSearchResult = null,
-      objectSearchSdk = {
-        city: dataSearch.city,
-        checkInDate: cloneDate(today),
-        checkOutDate: addDays(cloneDate(today), 1),
-      };
+  let sdkApi = new SdkApi(dataSearch)
+  let homyApi = new HomyApi(dataSearch)
+  const hotels = new Hotels();
+  hotels.addObjectApi(sdkApi)
+  hotels.addObjectApi(homyApi)
 
-  if (dataSearch.price != null
-    && dataSearch.price != "") {
-    url += `&maxPrice=${dataSearch.price}`
-    objectSearchSdk['priceLimit'] = dataSearch.price
+  let result = await hotels.getData()
+  let error = null;
+
+
+  if(result == 'error') {
+    error = result
   }
 
-  sdkSearchResult = await sdk.search(objectSearchSdk)
-
-  sdkSearchResult = sdkSearchResult.map(function(el) {
-    return normalizeDataSDK(el)
-  })
-
-  fetchResult = await fetchData(url)
-
-  if(fetchResult.code == 400) {
-    error = fetchResult
-  } else {
-    fetchResult = [...fetchResult, ...sdkSearchResult]
-    fetchResult = fetchResult.map(function(el) {
-      el.bookedDates = [getTimestamp(dataSearch.checkin), getTimestamp(dataSearch.checkout)]
-      return el
-    })
-  } 
-
-  resultSearch = callBack(error, fetchResult)
+  const resultSearch = callBack(error, result)
   renderSearchResultsBlock(resultSearch)
   
 }
@@ -122,9 +95,9 @@ interface ResultSearch {
   (error?: Error, places?: Object): String
 }
 
-const resultSearch: ResultSearch = (error?: Error, places?: Object): String => {
+const resultSearch: ResultSearch = (error?: Error, places?: Object[]): String => {
   if(error) {
-    console.error(error.name, error.message, 'Error code: ' + error.code)
+    console.error('Произошла ошибка поиска')
     return 'Error';
   }
 

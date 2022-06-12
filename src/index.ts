@@ -1,6 +1,6 @@
 import { renderSearchFormBlock, processingSearchForm } from './search-form.js'
 import { renderSearchStubBlock } from './search-results.js'
-import { renderUserBlock, getUserData } from './user.js'
+import { renderUserBlock } from './user.js'
 import { renderToast } from './lib.js'
 import Dates from './dates.js'
 
@@ -18,4 +18,5 @@ window.addEventListener('DOMContentLoaded', () => {
 
   let searchForm = document.querySelector('.search-form form')
   searchForm.addEventListener('submit', processingSearchForm)
+
 })

@@ -75,7 +75,7 @@ export function getItemsResultSearch(items: Array<String>): String {
   let resultHTML = '';
 
   items.forEach((elem) => {
-
+console.log(elem)
     let favorite = getFavoritesAmount(),
         favoriteTrue = false;
     if(favorite && favorite[elem.id]) {

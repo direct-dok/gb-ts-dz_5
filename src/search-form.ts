@@ -5,6 +5,7 @@ import { renderSearchResultsBlock, getItemsResultSearch } from './search-results
 import { HomyApi } from './DataHotel/HomyApi.js'
 import { SdkApi } from './DataHotel/SdkApi.js'
 import Hotels from './DataHotel/Hotels.js'
+import { checkPageElement } from './utility.js'
 
 export function renderSearchFormBlock (dateToday:string, lastDayNextMoth:string) :void {
 
@@ -47,12 +48,28 @@ export function renderSearchFormBlock (dateToday:string, lastDayNextMoth:string)
   )
 }
 
-export function processingSearchForm(e): void {
-  e.preventDefault()
+export function filterSortResult(e, formSelector = null) {
+  let formElement = checkPageElement(formSelector)
+  processingSearchForm(null, formElement, e.target.value)
+}
 
-  let allInputs = Array.from(
-    e.target.querySelectorAll('input')
-  )
+export function processingSearchForm(e, formDomElement = null, actionFilter = 'all'): void {
+  
+  let allInputs = null
+
+  if(e) {
+    e.preventDefault()
+
+    allInputs = Array.from(
+      e.target.querySelectorAll('input')
+    )
+  }
+
+  if(formDomElement) {
+    allInputs = Array.from(
+      formDomElement.querySelectorAll('input')
+    )
+  }
 
   let dataSearch: SearchFormData = {
     city: '',
@@ -66,11 +83,10 @@ export function processingSearchForm(e): void {
     dataSearch[field.name] = field.value
   })
 
-  search(dataSearch, resultSearch)
+  search(dataSearch, resultSearch, actionFilter)
 }
 
-export async function search(dataSearch: SearchFormData, callBack): void {
-
+export async function search(dataSearch: SearchFormData, callBack, filterAction): void {
 
   let sdkApi = new SdkApi(dataSearch)
   let homyApi = new HomyApi(dataSearch)
@@ -84,10 +100,15 @@ export async function search(dataSearch: SearchFormData, callBack): void {
 
   if(result == 'error') {
     error = result
+  } else {
+    result = filterSearchResult(result, filterAction)
   }
 
+  
+
   const resultSearch = callBack(error, result)
-  renderSearchResultsBlock(resultSearch)
+  
+  renderSearchResultsBlock(resultSearch, filterAction)
   
 }
 
@@ -103,4 +124,39 @@ const resultSearch: ResultSearch = (error?: Error, places?: Object[]): String =>
 
   return getItemsResultSearch(places);
   
+}
+
+export function filterSearchResult(array: Object[], actionFilter: String): Object[] {
+  let actions = actionsForFilter()
+  let results = actions ? 
+                  actions[actionFilter](array) : 
+                  array;
+  return results;
+}
+
+export function actionsForFilter() {
+  return {
+    all: function (arr) {
+      return arr
+    },
+    cheap: function (arr) {
+      let result = arr.sort(function(a, b) {
+        return a.price - b.price
+      })
+      return result
+    },
+    expensive: function (arr) {
+      let result = arr.sort(function(a, b) {
+        return b.price - a.price
+      })
+      return result
+    },
+    closer: function (arr) {
+      let result = arr.sort(function(a, b) {
+        return a.remoteness - b.remoteness
+      })
+      result = result.filter(elem => elem.remoteness > 0)
+      return result
+    }
+  }
 }

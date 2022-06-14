@@ -31,13 +31,16 @@ export class HomyApi implements Api {
 
     async execute() {
         let result = await fetchData(this.url)
+        
+        if(result.code == 400) {
+            return 'error';
+        }
+
         result = result.map(el => {
             el.bookedDates = [getTimestamp(this.checkin), getTimestamp(this.checkout)]
             return el
         })
-        if(result.code == 400) {
-            return 'error';
-        }
+
         return result;
     }
 

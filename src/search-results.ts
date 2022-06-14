@@ -1,7 +1,8 @@
 import { renderBlock } from './lib.js'
-import { addListenerForElements, checkPageElements } from './utility.js'
+import { addListenerForElements, addLIstenerForElement, checkPageElements, checkPageElement } from './utility.js'
 import { toggleFavoriteItem, getFavoritesAmount } from './user.js'
 import { booking } from './booking.js'
+import { filterSortResult } from './search-form.js'
 
 export function renderSearchStubBlock () {
   renderBlock(
@@ -27,7 +28,7 @@ export function renderEmptyOrErrorSearchBlock (reasonMessage) {
   )
 }
 
-export function renderSearchResultsBlock (resultSearch: String) {
+export function renderSearchResultsBlock (resultSearch: String, filterAction: String) {
 
   if(resultSearch == 'Error') {
     renderEmptyOrErrorSearchBlock('Произошла ошибка, попробуйте повторить запрос');
@@ -46,10 +47,11 @@ export function renderSearchResultsBlock (resultSearch: String) {
         <p>Результаты поиска</p>
         <div class="search-results-filter">
             <span><i class="icon icon-filter"></i> Сортировать:</span>
-            <select>
-                <option selected="">Сначала дешёвые</option>
-                <option selected="">Сначала дорогие</option>
-                <option>Сначала ближе</option>
+            <select class="select-filter">
+                <option value="all" ${filterAction == 'all' ? 'selected=""' : ''}>Все результаты</option>
+                <option value="cheap" ${filterAction == 'cheap' ? 'selected=""' : ''}>Сначала дешёвые</option>
+                <option value="expensive" ${filterAction == 'expensive' ? 'selected=""' : ''}>Сначала дорогие</option>
+                <option value="closer" ${filterAction == 'closer' ? 'selected=""' : ''}>Сначала ближе</option>
             </select>
         </div>
     </div>
@@ -59,14 +61,21 @@ export function renderSearchResultsBlock (resultSearch: String) {
     `
   )
 
-  let elements = checkPageElements('.favorites');
-  let buttonsReserve = checkPageElements('.reserved');
+  let elements = checkPageElements('.favorites')
+  let buttonsReserve = checkPageElements('.reserved')
+  let filterSelect = checkPageElement('.select-filter')
   if(elements.length) {
     addListenerForElements('click', elements, toggleFavoriteItem)
   }
 
   if(buttonsReserve.length) {
     addListenerForElements('click', buttonsReserve, booking)
+  }
+
+  if(filterSelect) {
+    addLIstenerForElement('change', filterSelect, (e) => {
+      filterSortResult(e, '.search-form form')
+    })
   }
   
 }
@@ -75,7 +84,6 @@ export function getItemsResultSearch(items: Array<String>): String {
   let resultHTML = '';
 
   items.forEach((elem) => {
-console.log(elem)
     let favorite = getFavoritesAmount(),
         favoriteTrue = false;
     if(favorite && favorite[elem.id]) {

@@ -21,8 +21,16 @@ export function addListenerForElements(event, elements, callBack): void {
     })
 }
 
+export function addLIstenerForElement(event, element, callBack): void {
+    element.addEventListener(event, callBack)
+}
+
 export function checkPageElements(selector:string): object {
     return document.querySelectorAll(selector)
+}
+
+export function checkPageElement(selector:string): object {
+    return document.querySelector(selector)
 }
 
 export function getDataJson(stringJson:string, keys:Array<string>): object {
